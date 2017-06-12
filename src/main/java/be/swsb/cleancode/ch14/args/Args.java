@@ -8,9 +8,6 @@ public class Args {
     private String[] args;
     private boolean valid = true;
     private Set<Character> unexpectedArguments = new TreeSet<>();
-    private HashMap<Character, ArgumentMarshaller> booleanArgs = new HashMap<>();
-    private Map<Character, ArgumentMarshaller> stringArgs = new HashMap<>();
-    private Map<Character, ArgumentMarshaller> intArgs = new HashMap<>();
     private Map<Character, ArgumentMarshaller> marshallers = new HashMap<>();
     private Set<Character> argsFound = new HashSet<>();
     private int currentArgument;
@@ -75,19 +72,16 @@ public class Args {
 
     private void parseBooleanSchemaElement(char elementId) {
         BooleanArgumentMarshaller m = new BooleanArgumentMarshaller();
-        booleanArgs.put(elementId, m);
         marshallers.put(elementId, m);
     }
 
     private void parseIntegerSchemaElement(char elementId) {
         IntegerArgumentMarshaller m = new IntegerArgumentMarshaller();
-        intArgs.put(elementId, m);
         marshallers.put(elementId, m);
     }
 
     private void parseStringSchemaElement(char elementId) {
         StringArgumentMarshaller m = new StringArgumentMarshaller();
-        stringArgs.put(elementId, m);
         marshallers.put(elementId, m);
     }
 
@@ -248,8 +242,14 @@ public class Args {
     }
 
     public boolean getBoolean(char arg) {
-        ArgumentMarshaller am = booleanArgs.get(arg);
-        return am != null && (Boolean) am.get();
+        ArgumentMarshaller am = marshallers.get(arg);
+        boolean b = false;
+        try {
+            b = am != null && (Boolean) am.get();
+        } catch (ClassCastException e) {
+            b = false;
+        }
+        return b;
     }
 
     public boolean has(char arg) {
