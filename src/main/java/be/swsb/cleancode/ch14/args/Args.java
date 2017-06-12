@@ -148,7 +148,7 @@ public class Args {
         String parameter = null;
         try {
             parameter = args[currentArgument];
-            intArgs.get(argChar).setInteger(Integer.parseInt(parameter));
+            intArgs.get(argChar).set(parameter);
         } catch (ArrayIndexOutOfBoundsException e) {
             valid = false;
             errorArgumentId = argChar;
@@ -167,7 +167,7 @@ public class Args {
     private void setStringArg(char argChar) throws ArgsException {
         currentArgument++;
         try {
-            stringArgs.get(argChar).setString(args[currentArgument]);
+            stringArgs.get(argChar).set(args[currentArgument]);
         } catch (ArrayIndexOutOfBoundsException e) {
             valid = false;
             errorArgumentId = argChar;
@@ -181,7 +181,10 @@ public class Args {
     }
 
     private void setBooleanArg(char argChar, boolean value) {
-        booleanArgs.get(argChar).setBoolean(value);
+        try {
+            booleanArgs.get(argChar).set("true");
+        } catch (ArgsException e) {
+        }
     }
 
     private boolean isBooleanArg(char argChar) {
@@ -231,17 +234,17 @@ public class Args {
 
     public String getString(char arg) {
         ArgumentMarshaller am = stringArgs.get(arg);
-        return am == null ? "" : am.getString();
+        return am == null ? "" : (String) am.get();
     }
 
     public int getInt(char arg) {
         ArgumentMarshaller am = intArgs.get(arg);
-        return am == null ? 0 : am.getInteger();
+        return am == null ? 0 : (int) (Integer) am.get();
     }
 
     public boolean getBoolean(char arg) {
         ArgumentMarshaller am = booleanArgs.get(arg);
-        return am != null && am.getBoolean();
+        return am != null && (Boolean) am.get();
     }
 
     public boolean has(char arg) {
@@ -255,37 +258,56 @@ public class Args {
     private class ArgsException extends Exception {
     }
 
-    private class ArgumentMarshaller {
+    private abstract class ArgumentMarshaller {
+
+        public abstract void set(String s) throws ArgsException;
+
+        public abstract Object get();
+    }
+
+    private class BooleanArgumentMarshaller extends ArgumentMarshaller {
         private boolean booleanValue = false;
-        private String stringValue;
-        private int integer;
 
-        public void setBoolean(boolean booleanValue) {
-            this.booleanValue = booleanValue;
+        @Override
+        public void set(String s) {
+            booleanValue = true;
         }
 
-        public boolean getBoolean() {
+        @Override
+        public Object get() {
             return booleanValue;
-        }
-
-        public void setString(String stringValue) {
-            this.stringValue = stringValue;
-        }
-
-        public String getString() {
-            return stringValue == null ? "" : stringValue;
-        }
-
-        public void setInteger(int integer) {
-            this.integer = integer;
-        }
-
-        public int getInteger() {
-            return integer;
         }
     }
 
-    private class BooleanArgumentMarshaller extends ArgumentMarshaller {}
-    private class StringArgumentMarshaller extends ArgumentMarshaller {}
-    private class IntegerArgumentMarshaller extends ArgumentMarshaller {}
+    private class StringArgumentMarshaller extends ArgumentMarshaller {
+        private String stringValue;
+
+        @Override
+        public void set(String s) {
+            stringValue = "";
+        }
+
+        @Override
+        public Object get() {
+            return stringValue == null ? "" : stringValue;
+        }
+    }
+
+    private class IntegerArgumentMarshaller extends ArgumentMarshaller {
+        private int intValue;
+
+        @Override
+        public void set(String s) throws ArgsException {
+            try {
+                intValue = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                throw new ArgsException();
+            }
+        }
+
+        @Override
+        public Object get() {
+            return intValue;
+        }
+    }
 }
