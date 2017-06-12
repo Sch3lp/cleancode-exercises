@@ -113,11 +113,11 @@ public class Args {
     private boolean setArgument(char argChar) throws ArgsException {
         ArgumentMarshaller m = marshallers.get(argChar);
         try {
-            if (isBooleanArg(m))
+            if (m instanceof BooleanArgumentMarshaller)
                 setBooleanArg(m);
-            else if (isStringArg(m))
+            else if (m instanceof StringArgumentMarshaller)
                 setStringArg(m);
-            else if (isIntArg(m))
+            else if (m instanceof IntegerArgumentMarshaller)
                 setIntArg(m);
             else
                 return false;
@@ -128,10 +128,6 @@ public class Args {
         }
 
         return true;
-    }
-
-    private boolean isIntArg(ArgumentMarshaller m) {
-        return m instanceof IntegerArgumentMarshaller;
     }
 
     private void setIntArg(ArgumentMarshaller m) throws ArgsException {
@@ -160,19 +156,11 @@ public class Args {
         }
     }
 
-    private boolean isStringArg(ArgumentMarshaller m) {
-        return m instanceof StringArgumentMarshaller;
-    }
-
     private void setBooleanArg(ArgumentMarshaller m) {
         try {
             m.set("true");
         } catch (ArgsException e) {
         }
-    }
-
-    private boolean isBooleanArg(ArgumentMarshaller m) {
-        return m instanceof BooleanArgumentMarshaller;
     }
 
     public int cardinality() {
@@ -216,6 +204,17 @@ public class Args {
         return message.toString();
     }
 
+    public boolean getBoolean(char arg) {
+        ArgumentMarshaller am = marshallers.get(arg);
+        boolean b = false;
+        try {
+            b = am != null && (Boolean) am.get();
+        } catch (ClassCastException e) {
+            b = false;
+        }
+        return b;
+    }
+
     public String getString(char arg) {
         try {
             ArgumentMarshaller am = marshallers.get(arg);
@@ -232,17 +231,6 @@ public class Args {
         } catch (Exception e) {
             return 0;
         }
-    }
-
-    public boolean getBoolean(char arg) {
-        ArgumentMarshaller am = marshallers.get(arg);
-        boolean b = false;
-        try {
-            b = am != null && (Boolean) am.get();
-        } catch (ClassCastException e) {
-            b = false;
-        }
-        return b;
     }
 
     public boolean has(char arg) {
