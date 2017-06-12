@@ -51,11 +51,11 @@ public class Args {
         String elementTail = element.substring(1);
         validateSchemaElementId(elementId);
         if (isBooleanSchemaElement(elementTail))
-            parseBooleanSchemaElement(elementId);
+            marshallers.put(elementId, new BooleanArgumentMarshaller());
         else if (isStringSchemaElement(elementTail))
-            parseStringSchemaElement(elementId);
+            marshallers.put(elementId, new StringArgumentMarshaller());
         else if (isIntegerSchemaElement(elementTail)) {
-            parseIntegerSchemaElement(elementId);
+            marshallers.put(elementId, new IntegerArgumentMarshaller());
         } else {
             throw new ParseException(
                     String.format("Argument: %c has invalid format: %s.",
@@ -68,21 +68,6 @@ public class Args {
             throw new ParseException(
                     "Bad character:" + elementId + "in Args format: " + schema, 0);
         }
-    }
-
-    private void parseBooleanSchemaElement(char elementId) {
-        BooleanArgumentMarshaller m = new BooleanArgumentMarshaller();
-        marshallers.put(elementId, m);
-    }
-
-    private void parseIntegerSchemaElement(char elementId) {
-        IntegerArgumentMarshaller m = new IntegerArgumentMarshaller();
-        marshallers.put(elementId, m);
-    }
-
-    private void parseStringSchemaElement(char elementId) {
-        StringArgumentMarshaller m = new StringArgumentMarshaller();
-        marshallers.put(elementId, m);
     }
 
     private boolean isStringSchemaElement(String elementTail) {
@@ -232,13 +217,21 @@ public class Args {
     }
 
     public String getString(char arg) {
-        ArgumentMarshaller am = stringArgs.get(arg);
-        return am == null ? "" : (String) am.get();
+        try {
+            ArgumentMarshaller am = marshallers.get(arg);
+            return am == null ? "" : (String) am.get();
+        } catch (ClassCastException e) {
+            return "";
+        }
     }
 
     public int getInt(char arg) {
-        ArgumentMarshaller am = intArgs.get(arg);
-        return am == null ? 0 : (int) (Integer) am.get();
+        try {
+            ArgumentMarshaller am = marshallers.get(arg);
+            return am == null ? 0 : (Integer) am.get();
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     public boolean getBoolean(char arg) {
